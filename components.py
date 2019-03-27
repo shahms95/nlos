@@ -55,53 +55,30 @@ def getStreakImageData(endpoints, mode, df1, df2, mag_x, mag_y, N):
 
     wp_delta = distance(wallPoints[0], wallPoints[1])
 
-    for obj in objlist:
 
-        p = wallPoints[-1]
-        diff = wallPoints[-1] - wallPoints[0]
-        p1 = movePoint(p, delta, diff)
+    # outer loop (time) is only useful for moving objects
+    for time in range(0, TOTAL_TIME, deltaTime):
+        for wp_index in index_to_use:
+            wp = wallPoints[wp_index]
+            pLit = wp
+            pSeen = wp
+            x = wp.getCoords()[0]
 
-        p = obj.getStart()
-        diff = obj.getEnd() - obj.getStart()
-        # p4 = movePoint(p,-delta,diff)
-        p4 = movePoint(p, -1, diff)
-
-        p = obj.getStart()
-        p_new = movePoint(p, delta, diff)
-        obj_delta = distance(p, p_new)
-
-        # outer loop (time) is only useful for moving objects
-        for time in range(0, TOTAL_TIME, deltaTime):
-            #     print("time",time)
-            # scanning the wall, one raster point at an instant
-
-            for wp_index in index_to_use:
-                #         print("wall point observed",wp.getCoords())
-                wp = wallPoints[wp_index]
-                pLit = wp
-                pSeen = wp
-                x = wp.getCoords()[0]
-                p = obj.getStart()
-                #         print("Wallpoint", wp.getCoords())
-                #         print("Object starting point ", p.getCoords())
+            for obj in objlist:
                 diff = obj.getEnd() - obj.getStart()
+                p = obj.getStart()
+                p_new = movePoint(p, delta, diff)
+                obj_delta = distance(p, p_new)
 
                 while distance(p, obj.getEnd()) >= EPS:
-                    #             print("hidden point observed", p.getCoords())
-                    #             print("peak in time intensity curve at ", distance(pSeen,p))
                     r = distance(pSeen, p)
                     x_index = int((x - START_X) / DELTA_X)
                     t_index = int(T_DISCRETISATION_FACTOR * r)
 
                     p2 = pSeen
-                    p3 = p
 
-                    # c_tmp = cosine(p1, p2, p3)
-                    #                 c1 = math.cos(math.acos(0)-math.acos(c_tmp))
                     l2 = distance(p2, p)
                     c1 = wp_delta / (l2)
-                    # c_tmp = cosine(p2, p3, p4)
-                    #                 c2 = math.cos(math.acos(0)-math.acos(c_tmp))
                     p_new = movePoint(p, delta, diff)
                     l3 = distance(p2, p_new)
                     c2 = obj_delta * 2 / (l2 + l3)
@@ -111,14 +88,9 @@ def getStreakImageData(endpoints, mode, df1, df2, mag_x, mag_y, N):
                     streak_img_data[time][x_index][t_index] = streak_img_data[time][x_index][t_index] + intensity_recd
                     p = p_new
 
-                #     moveSegment(obj, speed2)
-                # moveSegment(obj, speed1)
-                moveSurface(s, speed2)
-                # s.printSurface()
-            moveSurface(s, speed1)
-            # s.printSurface()
+            moveSurface(s, speed2)
+        moveSurface(s, speed1)
 
-    # s = s.getComponents()[0].getStart().getCoords()
     print("Object ended at ")
     s.printSurface()
     print("speed1 ", speed1.getCoords())
@@ -135,7 +107,7 @@ def backprojection(streak_img_data):
     for time in range(totalTime):
         xmax, tmax = streak_img_data[time].shape
         for x in range(xmax):
-            print("t/total : ", time,"/", totalTime ,"x : ",x,"/",xmax)
+            print("t/total : ", time, "/", totalTime, "x : ", x, "/", xmax)
             for t in range(tmax):
                 valid_dist = t / T_DISCRETISATION_FACTOR
                 #                 add noise instead of doing this

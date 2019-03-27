@@ -16,8 +16,8 @@ TOTAL_TIME = 4  # TOTAL_TIME is number of times the entire wall is scanned
 BOX_PER_UNIT = 25
 MY_MODE = 'seq'
 
-MYDF1 = 500*1e-3
-MYDF2 = 0*1e-3
+MYDF1 = 0*1e-3
+MYDF2 = 1*1e-3
 
 MY_SPEED = 'slow'
 MY_N = 5
