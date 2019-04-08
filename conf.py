@@ -33,7 +33,7 @@ bb3x, bb3y = 10, 10
 MY_DATA_FILE = "data"
 MY_IMG_FILE = "image"
 
-ROOT_DIR = '/expts/'
+ROOT_DIR = '/test/'
 IMAGE_DIR = '/images/'
 DATA_DIR = '/data/'
 INTERPOLATED_DATA_DIR_G = '/interpolated-data-g/'
@@ -42,3 +42,4 @@ INTERPOLATED_IMAGES_DIR_G = '/interpolated-images-g/'
 INTERPOLATED_IMAGES_DIR_F = '/interpolated-images-f/'
 
 MY_ENDPOINTS = [[13, 5], [14, 5.5], [15, 5], [16, 5.5], [17, 5]]
+MY_MAG_X, MY_MAG_Y = 0, 2.5

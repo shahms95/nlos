@@ -55,7 +55,6 @@ def getStreakImageData(endpoints, mode, df1, df2, mag_x, mag_y, N):
 
     wp_delta = distance(wallPoints[0], wallPoints[1])
 
-
     # outer loop (time) is only useful for moving objects
     for time in range(0, TOTAL_TIME, deltaTime):
         for wp_index in index_to_use:
@@ -245,41 +244,85 @@ def run2(root, loadfrom, s1, s2, mode='seq', filename="image", N=10):
         return
 
 
-# collects streak images formed on the wall and displays as a graph of intensity
+# collects data of streak images formed on the wall from file and displays as a graph of intensity
 # at a fixed point varying as a function of time
-def getData(endpoints, mode='seq', df1=0, df2=1e-3, mag_x=0, mag_y=0, filename="image", N=10, num_points=3):
-    print("Scanning the wall and collecting data...")
-    streak_img_data = getStreakImageData(endpoints, mode, df1, df2, mag_x, mag_y, N)
-    lt = len(streak_img_data)
-    lx, ly = streak_img_data[0].shape
-    lx, ly = lx * 10 / (lx + ly), ly * 10 / (lx + ly)
-    graph = plt.figure(figsize=(lx * (num_points * 3), ly * lt))
-    #     graph = plt.figure()
-    subplots = []
-    #     num_points = 3   # depending on number of wallpoints, the actual number of points might be 1 more than specified
-    for t in range(len(streak_img_data)):
-        xs, ys = streak_img_data[t].shape
+def getData(loadfromorig, loadfromint, num_points=3):
+    print("Reading from file and collecting data...")
+    jrange = int((END_X - START_X) / DELTA_X)
+    # stepsize = 10
+    data = []
+    loadfromint = loadfromint + "/interpolated-data-f/"
+    if (os.path.exists(loadfromint)):
+        for i in range(1, 4):
+            # for t in range(0, 2 * s2, stepsize):
+            for j in range(0, jrange, 125):
+                datapath = "{}int{}-{}.csv".format(loadfromint, i, j + 1)
+                # data.append(np.genfromtxt(loadfrom + 'int' + str(i) + str(i + 1) + '-' + str(j + 1) + '.csv',
+                #                           delimiter=','))
+                data.append(np.genfromtxt(datapath, delimiter=','))
+        streak_img_data_int = np.asarray(data)
+
+    data = []
+    loadfromorig = loadfromorig + "/data/"
+    if (os.path.exists(loadfromorig)):
+        for i in range(8):
+            datapath = "{}data-{}.txt".format(loadfromorig, i)
+            # data.append(np.genfromtxt(loadfrom + 'int' + str(i) + str(i + 1) + '-' + str(j + 1) + '.csv',
+            #                           delimiter=','))
+            data.append(np.genfromtxt(datapath))
+        streak_img_data_orig = np.asarray(data)
+
+    si = 0
+    for streak_img_data in [streak_img_data_orig, streak_img_data_int]:
+        lt = len(streak_img_data)
+        lx = streak_img_data[0].shape[0]
+
+        print("lx ", lx, " lt ", lt, " numpoints ", num_points)
+        # lx, ly = lx * 10 / (lx + ly), ly * 10 / (lx + ly)
+        xs = streak_img_data[0].shape[0]
         r = range(xs)
-        point_indexes = list(r)[::int(len(r) / num_points)]
-        point_indexes.append(xs - 1)
-        print(xs, ys)
+        if num_points != 0:
+            point_indexes = list(r)[::int(len(r) / num_points)]
+            if ((xs - 1) not in point_indexes):
+                point_indexes.append(xs - 1)
+        else:
+            point_indexes = list(r)
+
+        point_indexes = list(r)[-5:]
+
+        print(xs)
         spatial_resolution = len(point_indexes)
-        for i in range(spatial_resolution):
-            idx = (t) * spatial_resolution + i
-            subplots.append(graph.add_subplot(TOTAL_TIME, spatial_resolution, idx + 1))
-            #             subplots[t].figsize=((10*xs/(xs+ys)),(10*ys/(xs+ys)))
-            x = point_indexes[i]
-            subplots[idx].set(title='t=' + str(t) + ' x=' + str(x))
-            #             if(i==1):
-            #                 x = int(xs/2)
-            #             elif(i==2):
-            #                 x = int(xs-2)
-            print("x = ", x)
-            plt.plot(streak_img_data[t][x])
-    plt.tight_layout()
-    filename = "streak-" + filename
-    plt.savefig(filename)
-    print("Done.")
+
+        graph = plt.figure(figsize=((spatial_resolution * 8), 3 * lt))
+        # graph = plt.figure()
+        subplots = []
+        # num_points = 3   # depending on number of wallpoints, the actual number of points might be 1 more than specified
+        for t in range(lt):
+            for i in range(spatial_resolution):
+                idx = (t) * spatial_resolution + i
+                # print("-------------")
+                # print(t,i)
+                # print(TOTAL_TIME, spatial_resolution, idx + 1)
+                subplots.append(graph.add_subplot(lt, spatial_resolution, idx + 1))
+                #             subplots[t].figsize=((10*xs/(xs+ys)),(10*ys/(xs+ys)))
+                x = point_indexes[i]
+                subplots[idx].set(title='T=' + str(t) + ' x=' + str(x))
+                print("x = ", x)
+                plt.plot(streak_img_data[t][x])
+
+        plt.tight_layout()
+        streak_img_dir = "{}/streak_images/".format(loadfromint)
+        if not os.path.exists(streak_img_dir):
+            os.makedirs(streak_img_dir, mode=0o777)
+        # if streak_img_data == streak_img_data_orig:
+        if si == 0:
+            filename = "{}streakorig{}-{}.png".format(streak_img_dir, point_indexes[0], point_indexes[-1])
+        else:
+            filename = "{}streakint{}-{}.png".format(streak_img_dir, point_indexes[0], point_indexes[-1])
+        plt.savefig(filename)
+
+        print("Done. Output saved to ", streak_img_dir)
+        si += 1
 
 
 def saveData(root, endpoints, mode, df1, df2, mag_x, mag_y, filename, N):
