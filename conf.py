@@ -21,7 +21,7 @@ MYDF2 = 1*1e-3
 
 MY_SPEED = 'slow'
 MY_N = 5
-MY_NUM_POINTS = 3
+MY_NUM_POINTS = 8
 
 # MY_MAG_X, MY_MAG_Y = -0.5, -0.5
 

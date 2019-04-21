@@ -97,7 +97,6 @@ def getStreakImageData(endpoints, mode, df1, df2, mag_x, mag_y, N):
 
     return streak_img_data
 
-
 def backprojection(streak_img_data):
     #     xs,ys = data[0].shape
     totalTime = len(streak_img_data)
@@ -124,7 +123,6 @@ def backprojection(streak_img_data):
                                 voxels[time][vxi][vyi] = voxels[time][vxi][vyi] + streak_img_data[time][x][t] * (l * l)
     return voxels
 
-
 def hmap(voxels, filename="image"):
     graph = plt.figure(figsize=(20, 10))
     t = 0
@@ -142,7 +140,6 @@ def hmap(voxels, filename="image"):
 
     plt.tight_layout()
     plt.savefig(filename + ".png")
-
 
 def hmap_s(voxels, s1, s2, filename="image"):
     # t = int(s1)
@@ -170,7 +167,6 @@ def hmap_s(voxels, s1, s2, filename="image"):
         #     i = i+1
         #     j = 1
 
-
 # collect the data by running the simulation and backproject
 def run(root, endpoints, mode, df1, df2, mag_x, mag_y, filename, N):
     print("Scanning the wall and collecting data...")
@@ -196,7 +192,6 @@ def run(root, endpoints, mode, df1, df2, mag_x, mag_y, filename, N):
         hmap(voxels, imagename)
 
     print("Done.")
-
 
 # load the interpolated data from the saved files and backproject
 def run2(root, loadfrom, s1, s2, mode='seq', filename="image", N=10):
@@ -243,7 +238,6 @@ def run2(root, loadfrom, s1, s2, mode='seq', filename="image", N=10):
         print("Interpolated Data not found. Exiting...")
         return
 
-
 # collects data of streak images formed on the wall from file and displays as a graph of intensity
 # at a fixed point varying as a function of time
 def getData(loadfromorig, loadfromint, num_points=3):
@@ -251,7 +245,7 @@ def getData(loadfromorig, loadfromint, num_points=3):
     jrange = int((END_X - START_X) / DELTA_X)
     # stepsize = 10
     data = []
-    loadfromint = loadfromint + "/interpolated-data-f/"
+    loadfromint = loadfromint + INTERPOLATED_DATA_DIR_F
     if (os.path.exists(loadfromint)):
         for i in range(1, 4):
             # for t in range(0, 2 * s2, stepsize):
@@ -263,7 +257,7 @@ def getData(loadfromorig, loadfromint, num_points=3):
         streak_img_data_int = np.asarray(data)
 
     data = []
-    loadfromorig = loadfromorig + "/data/"
+    loadfromorig = loadfromorig + DATA_DIR
     if (os.path.exists(loadfromorig)):
         for i in range(8):
             datapath = "{}data-{}.txt".format(loadfromorig, i)
@@ -288,7 +282,7 @@ def getData(loadfromorig, loadfromint, num_points=3):
         else:
             point_indexes = list(r)
 
-        point_indexes = list(r)[-5:]
+        point_indexes = list(r)[:5]
 
         print(xs)
         spatial_resolution = len(point_indexes)
@@ -316,15 +310,64 @@ def getData(loadfromorig, loadfromint, num_points=3):
             os.makedirs(streak_img_dir, mode=0o777)
         # if streak_img_data == streak_img_data_orig:
         if si == 0:
-            filename = "{}streakorig{}-{}.png".format(streak_img_dir, point_indexes[0], point_indexes[-1])
+            filename = "{}{}-{}streakorig.png".format(streak_img_dir, point_indexes[0], point_indexes[-1])
         else:
-            filename = "{}streakint{}-{}.png".format(streak_img_dir, point_indexes[0], point_indexes[-1])
+            filename = "{}{}-{}streakint.png".format(streak_img_dir, point_indexes[0], point_indexes[-1])
         plt.savefig(filename)
 
         print("Done. Output saved to ", streak_img_dir)
         si += 1
 
+def getComponents(loadfromorig, loadfromint, location):
+    xTime, xIncrement, xSpace = location[0], location[1], location[2]
+    loadfromint = loadfromint + INTERPOLATED_DATA_DIR_F
+    # data = []
+    if (os.path.exists(loadfromint)):
+        datapath = "{}int{}-{}.csv".format(loadfromint, xTime, xIncrement)
+        target = (np.genfromtxt(datapath, delimiter=','))
+        # target = np.asarray(data)
 
+    loadfromorig = loadfromorig + DATA_DIR
+
+    data = []
+    if(os.path.exists(loadfromorig)):
+        for i in range(xTime-1, xTime+1):
+            datapath = "{}data-{}.txt".format(loadfromorig, i)
+            data.append(np.genfromtxt(datapath))
+        source = np.asarray(data)
+
+    plt.title("Location : {} ".format(location))
+    print("Target shape : ",target.shape)
+    plt.plot(target[xSpace])
+
+    plt.tight_layout()
+    component_dir = "{}/components/".format(loadfromint)
+    if not os.path.exists(component_dir):
+        os.makedirs(component_dir, mode=0o777)
+    filename = "{}target{}-{}-{}.png".format(component_dir, location[0], location[1], location[2])
+    plt.savefig(filename)
+
+    print("Done. Target output saved to ", component_dir)
+
+    subplots = []
+    size = 1 #creates a window of length 2*size+1
+    graph = plt.figure(figsize=((2*size+1)*2, 2*2))
+
+    for s in range(-size, size + 1):
+        for i in range(2):
+            j = xSpace + s
+            if(j>=0 and j<len(source[i])):
+                idx = 2*(size+s) + i + 1
+                subplots.append(graph.add_subplot(2*size+1, 2, idx))
+                print(len(subplots), idx)
+                subplots[idx-1].set(title="Source : {}, {}".format(i,s))
+                plt.plot(source[i][j])
+
+    plt.tight_layout()
+    filename = "{}source{}-{}-{}.png".format(component_dir, location[0], location[1], location[2])
+    plt.savefig(filename)
+
+#Scan the wall and collect data
 def saveData(root, endpoints, mode, df1, df2, mag_x, mag_y, filename, N):
     print("Scanning the wall and collecting data...")
     print("Scanning the wall")
